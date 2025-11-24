@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Mic, Send, RotateCcw, MessageSquare } from "lucide-react";
+import { Mic, MicOff, Send, RotateCcw, MessageSquare } from "lucide-react";
+import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 
 const sampleQuestions = [
   "Tell us about your creative journey and what inspired you to start creating content.",
@@ -17,12 +18,35 @@ export const InterviewPractice = () => {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answer, setAnswer] = useState("");
   const [showFeedback, setShowFeedback] = useState(false);
+  const { isListening, transcript, startListening, stopListening, resetTranscript } = useSpeechRecognition();
+
+  useEffect(() => {
+    if (transcript) {
+      setAnswer((prev) => {
+        const newText = prev ? `${prev} ${transcript}` : transcript;
+        return newText;
+      });
+    }
+  }, [transcript]);
+
+  const handleVoiceInput = () => {
+    if (isListening) {
+      stopListening();
+      resetTranscript();
+    } else {
+      startListening();
+    }
+  };
 
   const handleNextQuestion = () => {
     if (currentQuestion < sampleQuestions.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
       setAnswer("");
       setShowFeedback(false);
+      if (isListening) {
+        stopListening();
+        resetTranscript();
+      }
     }
   };
 
@@ -34,6 +58,10 @@ export const InterviewPractice = () => {
     setCurrentQuestion(0);
     setAnswer("");
     setShowFeedback(false);
+    if (isListening) {
+      stopListening();
+      resetTranscript();
+    }
   };
 
   return (
@@ -72,9 +100,23 @@ export const InterviewPractice = () => {
                     <MessageSquare className="w-4 h-4" />
                     Your Answer
                   </label>
-                  <Button variant="outline" size="sm" className="gap-2">
-                    <Mic className="w-4 h-4" />
-                    Voice Input
+                  <Button 
+                    variant={isListening ? "default" : "outline"} 
+                    size="sm" 
+                    className={`gap-2 ${isListening ? 'bg-destructive hover:bg-destructive/90 animate-pulse' : ''}`}
+                    onClick={handleVoiceInput}
+                  >
+                    {isListening ? (
+                      <>
+                        <MicOff className="w-4 h-4" />
+                        Stop Recording
+                      </>
+                    ) : (
+                      <>
+                        <Mic className="w-4 h-4" />
+                        Voice Input
+                      </>
+                    )}
                   </Button>
                 </div>
 
