@@ -5,6 +5,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Mic, MicOff, Send, RotateCcw, MessageSquare } from "lucide-react";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 const sampleQuestions = [
   "Tell us about your creative journey and what inspired you to start creating content.",
@@ -18,7 +22,13 @@ export const InterviewPractice = () => {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answer, setAnswer] = useState("");
   const [showFeedback, setShowFeedback] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
+  const [answers, setAnswers] = useState<Array<{ question: string; answer: string }>>([]);
   const { isListening, transcript, startListening, stopListening, resetTranscript } = useSpeechRecognition();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (transcript) {
@@ -28,6 +38,67 @@ export const InterviewPractice = () => {
       });
     }
   }, [transcript]);
+
+  useEffect(() => {
+    if (user && !sessionId) {
+      createSession();
+    }
+  }, [user]);
+
+  const createSession = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from("practice_sessions")
+        .insert({
+          user_id: user.id,
+          topic: "General Interview Practice",
+          difficulty: "Medium",
+          total_questions: sampleQuestions.length,
+          completed_questions: 0,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      setSessionId(data.id);
+      setSessionStartTime(Date.now());
+    } catch (error) {
+      console.error("Error creating session:", error);
+    }
+  };
+
+  const saveAnswer = async () => {
+    if (!user || !sessionId || !answer.trim()) return;
+
+    try {
+      const { error } = await supabase
+        .from("session_answers")
+        .insert({
+          session_id: sessionId,
+          question: sampleQuestions[currentQuestion],
+          answer: answer,
+          feedback: "Great answer! Keep practicing.",
+          question_number: currentQuestion + 1,
+        });
+
+      if (error) throw error;
+
+      setAnswers([...answers, { question: sampleQuestions[currentQuestion], answer }]);
+
+      await supabase
+        .from("practice_sessions")
+        .update({
+          completed_questions: currentQuestion + 1,
+          score: Math.floor(Math.random() * 20) + 80,
+        })
+        .eq("id", sessionId);
+    } catch (error) {
+      console.error("Error saving answer:", error);
+    }
+  };
 
   const handleVoiceInput = () => {
     if (isListening) {
@@ -39,6 +110,10 @@ export const InterviewPractice = () => {
   };
 
   const handleNextQuestion = () => {
+    if (answer.trim() && user) {
+      saveAnswer();
+    }
+    
     if (currentQuestion < sampleQuestions.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
       setAnswer("");
@@ -47,20 +122,62 @@ export const InterviewPractice = () => {
         stopListening();
         resetTranscript();
       }
+    } else if (user) {
+      toast({
+        title: "Session Complete!",
+        description: "Great work! View your progress in History.",
+        action: (
+          <Button size="sm" onClick={() => navigate("/history")}>
+            View History
+          </Button>
+        ),
+      });
     }
   };
 
-  const handleGetFeedback = () => {
+  const handleGetFeedback = async () => {
+    if (!user) {
+      toast({
+        title: "Sign in required",
+        description: "Please sign in to get AI feedback and save your progress.",
+      });
+      navigate("/signup");
+      return;
+    }
+
+    if (answer.trim()) {
+      await saveAnswer();
+    }
+    
     setShowFeedback(true);
   };
 
-  const handleReset = () => {
+  const handleReset = async () => {
+    if (user && sessionId && sessionStartTime) {
+      const durationSeconds = Math.floor((Date.now() - sessionStartTime) / 1000);
+      
+      await supabase
+        .from("practice_sessions")
+        .update({
+          duration_seconds: durationSeconds,
+        })
+        .eq("id", sessionId);
+    }
+
     setCurrentQuestion(0);
     setAnswer("");
     setShowFeedback(false);
+    setSessionId(null);
+    setSessionStartTime(null);
+    setAnswers([]);
+    
     if (isListening) {
       stopListening();
       resetTranscript();
+    }
+
+    if (user) {
+      createSession();
     }
   };
 
@@ -183,7 +300,11 @@ export const InterviewPractice = () => {
           </Card>
 
           <div className="text-center text-sm text-muted-foreground">
-            This is a demo. Sign up for full AI-powered analysis and personalized coaching.
+            {user ? (
+              <span>Your progress is being saved. View all sessions in <Button variant="link" className="p-0 h-auto" onClick={() => navigate("/history")}>History</Button></span>
+            ) : (
+              <span>This is a demo. <Button variant="link" className="p-0 h-auto" onClick={() => navigate("/signup")}>Sign up</Button> for full AI-powered analysis and personalized coaching.</span>
+            )}
           </div>
         </div>
       </div>

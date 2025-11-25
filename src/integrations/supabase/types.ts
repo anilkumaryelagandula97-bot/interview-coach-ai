@@ -14,7 +14,115 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      practice_sessions: {
+        Row: {
+          completed_questions: number
+          created_at: string
+          difficulty: string
+          duration_seconds: number | null
+          id: string
+          overall_feedback: string | null
+          score: number | null
+          topic: string
+          total_questions: number
+          user_id: string
+        }
+        Insert: {
+          completed_questions?: number
+          created_at?: string
+          difficulty: string
+          duration_seconds?: number | null
+          id?: string
+          overall_feedback?: string | null
+          score?: number | null
+          topic: string
+          total_questions?: number
+          user_id: string
+        }
+        Update: {
+          completed_questions?: number
+          created_at?: string
+          difficulty?: string
+          duration_seconds?: number | null
+          id?: string
+          overall_feedback?: string | null
+          score?: number | null
+          topic?: string
+          total_questions?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "practice_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          full_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          full_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      session_answers: {
+        Row: {
+          answer: string
+          created_at: string
+          feedback: string | null
+          id: string
+          question: string
+          question_number: number
+          session_id: string
+        }
+        Insert: {
+          answer: string
+          created_at?: string
+          feedback?: string | null
+          id?: string
+          question: string
+          question_number: number
+          session_id: string
+        }
+        Update: {
+          answer?: string
+          created_at?: string
+          feedback?: string | null
+          id?: string
+          question?: string
+          question_number?: number
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_answers_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "practice_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

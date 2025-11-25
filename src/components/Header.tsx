@@ -1,7 +1,12 @@
 import { Button } from "@/components/ui/button";
-import { Sparkles } from "lucide-react";
+import { Sparkles, History } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 export const Header = () => {
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b">
       <div className="container mx-auto px-4">
@@ -29,12 +34,41 @@ export const Header = () => {
           </nav>
 
           <div className="flex items-center gap-3">
-            <Button variant="ghost" className="hidden sm:flex">
-              Sign In
-            </Button>
-            <Button className="bg-gradient-primary hover:opacity-90 transition-opacity">
-              Get Started
-            </Button>
+            {user ? (
+              <>
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={() => navigate("/history")}
+                  className="hidden sm:flex"
+                >
+                  <History className="w-5 h-5" />
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  onClick={signOut}
+                  className="hidden sm:flex"
+                >
+                  Sign Out
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button 
+                  variant="ghost" 
+                  onClick={() => navigate("/login")}
+                  className="hidden sm:flex"
+                >
+                  Sign In
+                </Button>
+                <Button 
+                  className="bg-gradient-primary hover:opacity-90 transition-opacity"
+                  onClick={() => navigate("/signup")}
+                >
+                  Get Started
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </div>
