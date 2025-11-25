@@ -1,8 +1,12 @@
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ArrowRight, Sparkles } from "lucide-react";
 import heroImage from "@/assets/hero-interview.jpg";
+import { useState } from "react";
 
 export const Hero = () => {
+  const [showDemo, setShowDemo] = useState(false);
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-hero">
       <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
@@ -32,7 +36,7 @@ export const Hero = () => {
                 Start Practicing Free
                 <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Button>
-              <Button size="lg" variant="outline" className="border-2">
+              <Button size="lg" variant="outline" className="border-2" onClick={() => setShowDemo(true)}>
                 Watch Demo
               </Button>
             </div>
@@ -67,6 +71,23 @@ export const Hero = () => {
       </div>
       
       <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent"></div>
+
+      <Dialog open={showDemo} onOpenChange={setShowDemo}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>CreatorCoach AI Demo</DialogTitle>
+          </DialogHeader>
+          <div className="aspect-video w-full bg-muted rounded-lg flex items-center justify-center">
+            <iframe
+              className="w-full h-full rounded-lg"
+              src="https://www.youtube.com/embed/dQw4w9WgXcQ"
+              title="CreatorCoach AI Demo"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            ></iframe>
+          </div>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 };
